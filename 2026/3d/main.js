@@ -6,7 +6,6 @@
 // =============================================================================
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { SVGLoader } from "three/addons/loaders/SVGLoader.js";
 
 /* ---------- 도면 치수 ---------- */
@@ -218,10 +217,32 @@ function antenna(side, y) {
 const fromTop = (mm) => HH - mm;
 const BTN_OUT = 0.42;
 
-function sideButton(side, centerFromTop, length) {
-  const g = new RoundedBoxGeometry(1.2, length, 2.75, 4, 0.5);
-  const m = new THREE.Mesh(g, steel);
-  m.position.set(side * (HW + BTN_OUT - 0.6), fromTop(centerFromTop), 0);
+// 도면의 측면도: 버튼 양 끝이 완전한 반원(반지름 = 폭 / 2)인 알약 모양
+function stadium(width, length) {
+  const s = new THREE.Shape();
+  const r = width / 2;
+  s.absarc(0, length / 2 - r, r, 0, Math.PI, false);
+  s.absarc(0, -length / 2 + r, r, Math.PI, Math.PI * 2, false);
+  return s;
+}
+
+// 알약 모양을 바깥쪽으로 밀어내고(extrude), 윗면 가장자리는 베벨로 둥글린다.
+// 몸체 안쪽 0.4mm부터 시작해서 바깥으로 0.42mm 튀어나온다.
+function pillButtonGeometry(width, length, out = BTN_OUT, embed = 0.4, bevel = 0.25) {
+  const total = out + embed;
+  const g = new THREE.ExtrudeGeometry(stadium(width - bevel * 2, length - bevel * 2), {
+    depth: total - bevel * 2, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel,
+    bevelSegments: 6, curveSegments: 40,
+  });
+  g.translate(0, 0, bevel); // z: 0 ~ total
+  return g;
+}
+
+// side = -1(왼쪽) / 1(오른쪽). 로컬 x(폭) → 월드 z, 로컬 z(돌출) → 바깥쪽 x
+function sideButton(side, centerFromTop, length, width = 2.75) {
+  const m = new THREE.Mesh(pillButtonGeometry(width, length), steel);
+  m.rotation.y = side * Math.PI / 2;
+  m.position.set(side * (HW - 0.4), fromTop(centerFromTop), 0);
   m.userData.rest = m.position.x;
   m.userData.side = side;
   phone.add(m);
@@ -233,28 +254,29 @@ const sideBtn = sideButton(1, 41.39, 17.08);
 
 // 링/무음 스위치: 홈(5.72 x 2.06) 안에서 토글이 앞뒤로 움직인다. 무음이면 주황색이 드러난다.
 const ringY = fromTop(19.28);
-const slot = new THREE.Mesh(new THREE.PlaneGeometry(2.06, 5.72), holeMat);
-slot.rotation.y = -Math.PI / 2;
+// 평면 도형을 왼쪽 옆면에 붙이기: 로컬 x(폭) → 월드 z
+const onLeftSide = (geo) => geo.rotateY(-Math.PI / 2);
+const slot = new THREE.Mesh(onLeftSide(new THREE.ShapeGeometry(stadium(2.06, 5.72), 32)), holeMat);
 slot.position.set(-HW - 0.02, ringY, 0);
 phone.add(slot);
-const orange = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 4.6), new THREE.MeshBasicMaterial({ color: 0xff7a1a }));
-orange.rotation.y = -Math.PI / 2;
-orange.position.set(-HW - 0.03, ringY, 0.55);
+const orange = new THREE.Mesh(onLeftSide(new THREE.ShapeGeometry(stadium(0.7, 4.4), 24)), new THREE.MeshBasicMaterial({ color: 0xff7a1a }));
+orange.position.set(-HW - 0.03, ringY, 0.5);
 orange.visible = false;
 phone.add(orange);
-const ringToggle = new THREE.Mesh(new RoundedBoxGeometry(0.9, 2.4, 1.0, 3, 0.3), steel);
-ringToggle.position.set(-HW - 0.25, ringY, 0.45);
+const ringToggle = new THREE.Mesh(pillButtonGeometry(1.1, 2.7, 0.35, 0.3, 0.2), steel);
+ringToggle.rotation.y = -Math.PI / 2;
+ringToggle.position.set(-HW + 0.3, ringY, 0.42);
 phone.add(ringToggle);
 
 // SIM 트레이 (오른쪽, 중심 63.46, 길이 15.97, 폭 2.30) + 꺼내기 구멍
 {
   const y = fromTop(63.46);
-  const gap = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 15.97), new THREE.MeshBasicMaterial({ color: 0x3a3a3c }));
-  gap.rotation.y = Math.PI / 2;
+  const gap = new THREE.Mesh(new THREE.ShapeGeometry(stadium(2.3, 15.97), 32).rotateY(Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x3a3a3c }));
   gap.position.set(HW + 0.02, y, 0);
   phone.add(gap);
-  const tray = new THREE.Mesh(new RoundedBoxGeometry(0.6, 15.6, 2.0, 3, 0.25), steel);
-  tray.position.set(HW - 0.24, y, 0);
+  const tray = new THREE.Mesh(pillButtonGeometry(2.0, 15.6, 0.04, 0.5, 0.15), steel);
+  tray.rotation.y = Math.PI / 2;
+  tray.position.set(HW - 0.5, y, 0);
   phone.add(tray);
   const hole = new THREE.Mesh(new THREE.CircleGeometry(0.45, 24), holeMat);
   hole.rotation.y = Math.PI / 2;
@@ -424,14 +446,31 @@ screenTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 const screenMesh = new THREE.Mesh(
   new THREE.PlaneGeometry(SCREEN_W, SCREEN_H),
   // polygonOffset: 깊이값을 살짝 앞으로 당겨서 바로 아래 검은 유리와 절대 겹치지 않게
-  new THREE.MeshBasicMaterial({ map: screenTex, transparent: true, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }),
+  // alphaTest: 둥근 모서리 바깥의 투명한 부분은 깊이값도 남기지 않게
+  new THREE.MeshBasicMaterial({ map: screenTex, transparent: true, alphaTest: 0.01, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }),
 );
 screenMesh.position.z = HT + 0.05;
 phone.add(screenMesh);
 
 // 화면 위 유리 반사: 검은 반사 재질을 "더하기" 합성으로 얹어 반사광만 보이게
+// 반사층은 화면과 똑같은 둥근 사각형이어야 한다. (직사각형이면 모서리가 곡면 유리 위로
+// 떠서 특정 각도에서 네모난 반사가 보인다.) 화면 모서리 r39pt = 39 x 63.12/375 mm
+const SCREEN_R = 39 * SCREEN_W / 375;
+const screenShape = new THREE.Shape();
+{
+  const w = SCREEN_W / 2, h = SCREEN_H / 2, r = SCREEN_R;
+  screenShape.moveTo(-w + r, -h);
+  screenShape.lineTo(w - r, -h);
+  screenShape.absarc(w - r, -h + r, r, -Math.PI / 2, 0, false);
+  screenShape.lineTo(w, h - r);
+  screenShape.absarc(w - r, h - r, r, 0, Math.PI / 2, false);
+  screenShape.lineTo(-w + r, h);
+  screenShape.absarc(-w + r, h - r, r, Math.PI / 2, Math.PI, false);
+  screenShape.lineTo(-w, -h + r);
+  screenShape.absarc(-w + r, -h + r, r, Math.PI, Math.PI * 1.5, false);
+}
 const cover = new THREE.Mesh(
-  new THREE.PlaneGeometry(SCREEN_W, SCREEN_H),
+  new THREE.ShapeGeometry(screenShape, 32),
   new THREE.MeshPhysicalMaterial({ color: 0x000000, roughness: 0.06, clearcoat: 0.5, envMapIntensity: 0.45, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -8 }),
 );
 cover.position.z = HT + 0.1;
