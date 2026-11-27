@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CSS iPhone X 3D</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="main.js"></script>
+</head>
+<body>
+  <canvas id="scene" aria-label="아이폰 X 3D 모델. 드래그해서 돌리고, 버튼과 화면을 눌러볼 수 있어요."></canvas>
+
+  <nav class="links">
+    <a href="../">&larr; 2D 버전</a>
+    <a href="../../2018/">8년 전 결과물 (2018, 고3)</a>
+  </nav>
+
+  <div class="views" role="group" aria-label="시점 바꾸기">
+    <button type="button" data-view="front">앞면</button>
+    <button type="button" data-view="back">뒷면</button>
+    <button type="button" data-view="left">왼쪽</button>
+    <button type="button" data-view="right">오른쪽</button>
+    <button type="button" data-view="bottom">아래</button>
+  </div>
+
+  <p class="credit">치수 출처: Apple Accessory Design Guidelines &middot; iPhone X 도면 (mm)</p>
+  <p class="loading" aria-live="polite">불러오는 중&hellip;</p>
+</body>
+</html>

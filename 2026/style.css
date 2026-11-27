@@ -590,10 +590,12 @@ body::after {
   backdrop-filter: blur(12px);
   transition: background 0.2s;
 }
+.time-travel--right { left: auto; right: 24px; }
 .time-travel:hover { background: rgba(0, 0, 0, 0.55); }
 .time-travel:focus-visible { outline: 2px solid #5ac8fa; outline-offset: 2px; }
 @media (max-width: 480px) {
   .time-travel { top: 12px; left: 12px; padding: 8px 12px; font-size: 12px; }
+  .time-travel--right { left: auto; right: 12px; }
 }
 
 /* 움직임을 줄이도록 설정한 사용자 존중 */
