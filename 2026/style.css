@@ -1,0 +1,605 @@
+/* =========================================================================
+   CSS iPhone X
+   -------------------------------------------------------------------------
+   설계 원칙
+   1. 단위 하나(--pt)로 전부 표현한다.
+      아이폰 X 화면은 375 x 812 pt. 실제 기기(70.9 x 143.6mm)를 같은 비율로
+      환산하면 426 x 863 pt. 모든 치수를 "실제 pt 값 x --pt"로 쓰면
+      --pt 하나만 바꿔도 폰 전체가 비율 그대로 커지고 작아진다.
+   2. 실제 기기의 구조대로 층을 쌓는다.
+      .iphone(스테인리스 프레임) > .bezel(검은 유리) > .screen(OLED) > 내용
+   3. 빛은 별도 레이어로 얹는다. (.glass)
+   ========================================================================= */
+
+:root {
+  /* 화면 높이의 86%, 너비의 92% 중 작은 쪽에 맞추고, 최대 0.9px로 제한 */
+  --pt: min(0.9px, calc(86vh / 863), calc(92vw / 426));
+  --pt: min(0.9px, calc(86dvh / 863), calc(92vw / 426));
+
+  --glass-black: #050506;
+  --ui-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+             "Apple SD Gothic Neo", "Helvetica Neue", system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  overflow: hidden;
+  background: #0a1517;
+  font-family: var(--ui-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 배경: 같은 배경화면을 크게 흐려서 재사용 (블러 이미지를 따로 만들 필요 없음) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -10vmax;
+  z-index: -2;
+  background: url("wallpaper.jpg") center / cover;
+  filter: blur(56px) saturate(1.3) brightness(0.55);
+}
+
+/* 비네팅: 가장자리를 어둡게 해서 시선을 가운데로 */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(0, 0, 0, 0.6) 100%);
+}
+
+/* 가운데 정렬은 grid 한 줄이면 끝. (margin-top: 50%는 "너비" 기준이라 틀린다) */
+.stage {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  perspective: calc(2400 * var(--pt));
+}
+
+/* =========================================================================
+   1. 스테인리스 프레임
+   ========================================================================= */
+.iphone {
+  /* JS가 마우스 위치를 -1 ~ 1로 넣어준다. 기본값 0 = 정면 */
+  --tx: 0;
+  --ty: 0;
+
+  position: relative;
+  width: calc(426 * var(--pt));
+  height: calc(863 * var(--pt));
+  margin: 0;
+  /* 동심원 원칙: 바깥 반지름 = 화면 반지름(39) + 테두리 두께(25.5) */
+  border-radius: calc(64.5 * var(--pt));
+
+  /* 광택 금속 = 밝고 어두운 띠가 촘촘히 반복되는 반사.
+     conic-gradient의 시작 각도를 기울기에 연동하면 폰을 돌릴 때 반사가 움직인다. */
+  background: conic-gradient(
+    from calc(210deg + var(--tx) * 50deg),
+    #fbfbfc, #a1a2a5 8%, #ebebed 17%, #6c6d70 27%, #dddde0 38%, #fefefe 46%,
+    #9c9da0 56%, #ededef 66%, #78797c 77%, #e4e4e7 88%, #fbfbfc
+  );
+
+  box-shadow:
+    /* 프레임 바깥 모서리의 얇은 하이라이트와 굴곡 */
+    inset 0 0 0 calc(0.6 * var(--pt)) rgba(255, 255, 255, 0.8),
+    inset 0 0 calc(1.6 * var(--pt)) calc(0.8 * var(--pt)) rgba(0, 0, 0, 0.3),
+    /* 바닥 그림자: 가까운 진한 그림자 + 멀리 퍼지는 연한 그림자를 겹쳐야 자연스럽다.
+       기울기 반대 방향으로 밀어서 빛이 고정돼 있는 것처럼 보이게 한다. */
+    calc(var(--tx) * -8 * var(--pt)) calc(6 * var(--pt)) calc(12 * var(--pt)) rgba(0, 0, 0, 0.35),
+    calc(var(--tx) * -20 * var(--pt)) calc((30 - var(--ty) * 10) * var(--pt)) calc(70 * var(--pt)) rgba(0, 0, 0, 0.5),
+    0 0 0 calc(0.5 * var(--pt)) rgba(0, 0, 0, 0.45);
+
+  transform: rotateX(calc(var(--ty) * -7deg)) rotateY(calc(var(--tx) * 9deg));
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1),
+              box-shadow 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* 프레임 안쪽(유리와 맞닿는 쪽)이 둥글게 꺾이며 어두워지는 부분 */
+.iphone::before {
+  content: "";
+  position: absolute;
+  inset: calc(3.2 * var(--pt));
+  border-radius: calc(61.3 * var(--pt));
+  box-shadow: 0 0 calc(1.6 * var(--pt)) calc(0.8 * var(--pt)) rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+/* 안테나 라인: 금속 프레임을 끊는 무광 플라스틱 */
+.antenna {
+  position: absolute;
+  z-index: 1;
+  width: calc(5 * var(--pt));
+  height: calc(2.2 * var(--pt));
+  background: linear-gradient(90deg, #b3b4b7, #d6d6d8 50%, #a6a7aa);
+}
+.antenna--left   { left: 0; }
+.antenna--right  { right: 0; }
+.antenna--top    { top: calc(78 * var(--pt)); }
+.antenna--bottom { bottom: calc(78 * var(--pt)); }
+
+/* =========================================================================
+   2. 하드웨어 버튼
+   ========================================================================= */
+.hw {
+  position: absolute;
+  width: calc(3.2 * var(--pt));
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  /* 원기둥 음영: 가운데가 밝고 양 끝이 어둡다 */
+  background: linear-gradient(90deg, #5c5d60, #c7c8ca 35%, #fbfbfb 55%, #a1a2a5 80%, #6a6b6e);
+  transition: transform 0.08s ease-out, background 0.2s;
+}
+.hw:focus-visible { outline: 2px solid #5ac8fa; outline-offset: 2px; }
+
+.hw--mute, .hw--vol-up, .hw--vol-down {
+  right: 100%;
+  border-radius: calc(1.6 * var(--pt)) 0 0 calc(1.6 * var(--pt));
+}
+.hw--mute     { top: calc(118 * var(--pt)); height: calc(30 * var(--pt)); }
+.hw--vol-up   { top: calc(180 * var(--pt)); height: calc(58 * var(--pt)); }
+.hw--vol-down { top: calc(252 * var(--pt)); height: calc(58 * var(--pt)); }
+.hw--side {
+  left: 100%;
+  top: calc(200 * var(--pt));
+  height: calc(98 * var(--pt));
+  border-radius: 0 calc(1.6 * var(--pt)) calc(1.6 * var(--pt)) 0;
+}
+
+/* 누르면 몸체 쪽으로 살짝 들어간다 */
+.hw--vol-up:active, .hw--vol-down:active { transform: translateX(calc(1.2 * var(--pt))); }
+.hw--side:active { transform: translateX(calc(-1.2 * var(--pt))); }
+
+/* 무음 모드 = 스위치가 넘어가며 주황색 띠가 드러난다 (실제 아이폰 디테일) */
+.hw--mute[aria-pressed="true"] {
+  background:
+    linear-gradient(to bottom, transparent 52%, #ff7a1a 52%, #e8620a),
+    linear-gradient(90deg, #5c5d60, #c7c8ca 35%, #fbfbfb 55%, #a1a2a5 80%, #6a6b6e);
+  background-size: 45% 100%, 100% 100%;
+  background-repeat: no-repeat;
+  background-position: right, 0 0;
+}
+
+/* =========================================================================
+   3. 베젤(검은 유리)과 화면
+   ========================================================================= */
+.bezel {
+  position: absolute;
+  inset: calc(5 * var(--pt));
+  border-radius: calc(59.5 * var(--pt));
+  background: var(--glass-black);
+  /* 금속과 유리 사이의 아주 얇은 검은 틈 */
+  box-shadow: 0 0 0 calc(0.6 * var(--pt)) #141416;
+  overflow: hidden;
+}
+
+/* 2.5D 곡면 유리 가장자리의 반사 띠.
+   실측하면 검은 테두리(약 21pt) 중 바깥쪽 약 10pt는 유리가 휘면서 빛을 받아 밝게 보인다.
+   이 띠가 없으면 테두리 전체가 한 덩어리 검정이라 실제보다 훨씬 두꺼워 보인다. */
+.bezel::before {
+  content: "";
+  position: absolute;
+  inset: calc(3.6 * var(--pt));
+  border-radius: calc(55.9 * var(--pt));
+  border: calc(9.6 * var(--pt)) solid;
+  border-color: rgba(255, 255, 255, 0.13) rgba(255, 255, 255, 0.07)
+                rgba(255, 255, 255, 0.05) rgba(255, 255, 255, 0.1);
+  filter: blur(calc(2.4 * var(--pt)));
+  pointer-events: none;
+}
+
+.screen {
+  position: absolute;
+  inset: calc(20.5 * var(--pt));
+  border-radius: calc(39 * var(--pt));
+  overflow: hidden;
+  isolation: isolate;
+  background: #000;
+  color: #fff;
+}
+
+/* 화면 상태: boot → on ↔ off (JS가 data-state만 바꾸고, 보이는 건 CSS가 담당) */
+.boot, .lock {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+.screen[data-state="boot"] .boot { opacity: 1; }
+.screen[data-state="on"] .lock { opacity: 1; pointer-events: auto; }
+
+.boot {
+  display: grid;
+  place-items: center;
+  background: #000;
+}
+.boot img {
+  width: calc(76 * var(--pt));
+  height: calc(76 * var(--pt));
+  animation: boot-logo 2.2s ease both;
+}
+@keyframes boot-logo {
+  0%   { opacity: 0; }
+  25%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+.wallpaper {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.28), transparent 22%),
+    url("wallpaper.jpg") 50% 40% / cover;
+  transform: scale(1.06);
+  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.screen[data-state="on"] .wallpaper { transform: none; }
+
+/* ---------- 상태 표시줄: 노치 양옆 "귀" 영역 ----------
+   실제 아이폰 X 화면 사진에서 픽셀을 재서 pt로 환산한 좌표.
+   - 아이콘 세로 중심 y = 23.7pt: 노치 아래쪽 높이에 맞춰 "낮게" 앉는다.
+     (위로 올리면 화면 모서리 곡선(r39)에 걸려 베젤과 부딪힌다)
+   - 오른쪽 묶음: 신호 294.5~310 / 와이파이 316.5~331.5 / 배터리 336.5~360.5
+     → 배터리 돌기 끝이 화면 오른쪽 끝에서 14.5pt 안쪽
+   - 왼쪽 글자: 중심 x = 54pt */
+.status {
+  position: absolute;
+  inset: 0;
+  font-size: calc(15 * var(--pt));
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.status__carrier,
+.status__right {
+  position: absolute;
+  top: calc(23.7 * var(--pt));
+  transform: translateY(-50%);
+}
+.status__carrier {
+  left: calc(54 * var(--pt));
+  transform: translate(-50%, -50%);
+}
+.status__right {
+  left: calc(294.5 * var(--pt));
+  display: flex;
+  align-items: center;
+}
+
+.signal {
+  display: flex;
+  align-items: flex-end;
+  gap: calc(1.33 * var(--pt));
+  height: calc(10 * var(--pt));
+  margin-right: calc(6.2 * var(--pt));
+}
+.signal i {
+  width: calc(3 * var(--pt)); /* 막대 4개 x 3pt + 간격 3 x 1.33pt = 16pt */
+  border-radius: calc(0.8 * var(--pt));
+  background: #fff;
+}
+.signal i:nth-child(1) { height: 36%; }
+.signal i:nth-child(2) { height: 55%; }
+.signal i:nth-child(3) { height: 77%; }
+.signal i:nth-child(4) { height: 100%; }
+
+.wifi {
+  width: calc(15 * var(--pt));
+  height: calc(10.75 * var(--pt));
+  margin-right: calc(5 * var(--pt));
+  fill: #fff;
+}
+
+.battery {
+  position: relative;
+  width: calc(22.5 * var(--pt));
+  height: calc(11.5 * var(--pt));
+  padding: calc(1.5 * var(--pt));
+  border: calc(1 * var(--pt)) solid rgba(255, 255, 255, 0.4);
+  border-radius: calc(3.2 * var(--pt));
+}
+.battery::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 1 * var(--pt));
+  width: calc(1.5 * var(--pt));
+  height: calc(4 * var(--pt));
+  border-radius: 0 calc(1 * var(--pt)) calc(1 * var(--pt)) 0;
+  background: rgba(255, 255, 255, 0.4);
+  transform: translateY(-50%);
+}
+.battery__level {
+  display: block;
+  width: 82%;
+  height: 100%;
+  border-radius: calc(1.6 * var(--pt));
+  background: #fff;
+}
+
+/* ---------- 잠금화면 ---------- */
+.lock__glyph {
+  position: absolute;
+  top: calc(56 * var(--pt));
+  left: 50%;
+  width: calc(14 * var(--pt));
+  height: calc(10.5 * var(--pt));
+  border-radius: calc(2.2 * var(--pt));
+  background: #fff;
+  transform: translateX(-50%);
+}
+.lock__glyph::before { /* 자물쇠 고리 */
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  width: calc(9.4 * var(--pt));
+  height: calc(8.5 * var(--pt));
+  border: calc(1.8 * var(--pt)) solid #fff;
+  border-bottom: 0;
+  border-radius: calc(5 * var(--pt)) calc(5 * var(--pt)) 0 0;
+  transform: translate(-50%, calc(0.6 * var(--pt)));
+}
+
+.lock__time, .lock__date {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  text-shadow: 0 0 calc(24 * var(--pt)) rgba(0, 0, 0, 0.18);
+  transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.lock__time {
+  top: calc(80 * var(--pt));
+  font-size: calc(86 * var(--pt));
+  font-weight: 200;
+  letter-spacing: calc(-2 * var(--pt));
+  line-height: 1;
+}
+.lock__date {
+  top: calc(178 * var(--pt));
+  font-size: calc(21 * var(--pt));
+  font-weight: 400;
+}
+/* 화면이 켜질 때 시계가 살짝 내려앉는 모션 */
+.screen:not([data-state="on"]) .lock__time,
+.screen:not([data-state="on"]) .lock__date {
+  transform: translateY(calc(-10 * var(--pt))) scale(1.03);
+}
+
+.lock__action {
+  position: absolute;
+  bottom: calc(46 * var(--pt));
+  display: grid;
+  place-items: center;
+  width: calc(50 * var(--pt));
+  height: calc(50 * var(--pt));
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(28, 28, 30, 0.32);
+  /* 반투명 + 배경 블러 = iOS 특유의 "유리" 재질 */
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+.lock__action svg {
+  width: calc(24 * var(--pt));
+  height: calc(24 * var(--pt));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+.lock__action--torch  { left: calc(46 * var(--pt)); cursor: pointer; }
+.lock__action--camera { right: calc(46 * var(--pt)); }
+.lock__action--torch:active { transform: scale(0.94); }
+.lock__action--torch[aria-pressed="true"] { background: #fff; color: #000; }
+.lock__action--torch:focus-visible { outline: 2px solid #5ac8fa; outline-offset: 2px; }
+
+.home-indicator {
+  position: absolute;
+  bottom: calc(8 * var(--pt));
+  left: 50%;
+  width: calc(134 * var(--pt));
+  height: calc(5 * var(--pt));
+  border-radius: calc(3 * var(--pt));
+  background: #fff;
+  transform: translateX(-50%);
+}
+
+/* ---------- HUD ---------- */
+.hud {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 4;
+  width: calc(156 * var(--pt));
+  height: calc(156 * var(--pt));
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  align-items: center;
+  padding: calc(14 * var(--pt)) calc(16 * var(--pt)) calc(18 * var(--pt));
+  border-radius: calc(20 * var(--pt));
+  color: #3a3a3c;
+  background: rgba(238, 238, 240, 0.74);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  backdrop-filter: blur(24px) saturate(1.8);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.92);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+.screen[data-state="on"] .hud.is-visible { opacity: 1; transform: translate(-50%, -50%); }
+.hud__label { font-size: calc(15 * var(--pt)); font-weight: 600; }
+.hud__icon svg {
+  display: none;
+  width: calc(64 * var(--pt));
+  height: calc(64 * var(--pt));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.hud__icon .fill { fill: currentColor; }
+.hud[data-kind="volume"] .i-speaker,
+.hud[data-kind="ring"] .i-bell,
+.hud[data-kind="silent"] .i-bell-slash { display: block; }
+
+.hud__bar {
+  display: flex;
+  gap: calc(1 * var(--pt));
+  width: 100%;
+  height: calc(6 * var(--pt));
+}
+.hud__bar i { flex: 1; background: rgba(60, 60, 67, 0.18); }
+.hud__bar i.on { background: #2c2c2e; }
+.hud[data-kind="ring"] .hud__bar,
+.hud[data-kind="silent"] .hud__bar { visibility: hidden; }
+
+/* =========================================================================
+   4. 노치
+   ========================================================================= */
+.notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 5;
+  /* 실측(위키백과 iPhone X 벡터 도면 환산): 폭 209pt, 깊이 30pt, 아래 모서리 r20 */
+  width: calc(209 * var(--pt));
+  height: calc(30 * var(--pt));
+  border-radius: 0 0 calc(20 * var(--pt)) calc(20 * var(--pt));
+  background: #000;
+  transform: translateX(-50%);
+}
+
+/* 노치 양옆 "어깨"의 오목한 곡선.
+   작은 정사각형 안에 radial-gradient로 "원 바깥만 검게" 칠하면 된다.
+   (예전 코드의 box-shadow 트릭과 원리는 같지만 요소 하나로 끝난다) */
+.notch::before, .notch::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: calc(6 * var(--pt));
+  height: calc(6 * var(--pt));
+}
+.notch::before {
+  right: 100%;
+  background: radial-gradient(circle at 0 100%, transparent calc(6 * var(--pt)), #000 calc(6 * var(--pt) + 0.5px));
+}
+.notch::after {
+  left: 100%;
+  background: radial-gradient(circle at 100% 100%, transparent calc(6 * var(--pt)), #000 calc(6 * var(--pt) + 0.5px));
+}
+
+/* 수화부 스피커: 아주 미세한 그물망 */
+.notch__speaker {
+  position: absolute;
+  top: calc(6.2 * var(--pt));
+  left: 50%;
+  width: calc(51.5 * var(--pt));
+  height: calc(6.5 * var(--pt));
+  border-radius: calc(3 * var(--pt));
+  background:
+    radial-gradient(circle, #2b2c30 0 0.4px, transparent 0.7px) 0 0 / calc(1.7 * var(--pt)) calc(1.7 * var(--pt)),
+    linear-gradient(#0b0b0d, #1c1d20);
+  box-shadow:
+    inset 0 calc(0.6 * var(--pt)) calc(1 * var(--pt)) rgba(0, 0, 0, 0.9),
+    0 calc(0.5 * var(--pt)) 0 rgba(255, 255, 255, 0.05);
+  transform: translateX(-50%);
+}
+
+/* 전면 카메라: 렌즈 코팅의 푸른/보라 반사를 여러 겹의 radial-gradient로 */
+.notch__camera {
+  position: absolute;
+  top: calc(4 * var(--pt));
+  left: calc(50% + 41 * var(--pt));
+  width: calc(12 * var(--pt));
+  height: calc(12 * var(--pt));
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 34%, rgba(140, 160, 255, 0.6) 0 7%, transparent 14%),
+    radial-gradient(circle at 62% 64%, rgba(120, 60, 180, 0.4) 0 9%, transparent 20%),
+    radial-gradient(circle, #0c1124 0 34%, #14151b 44%, #060607 68%, #1d1e22 100%);
+  box-shadow: inset 0 0 0 calc(0.6 * var(--pt)) #232428;
+}
+
+/* Face ID 센서들: 거의 안 보이지만 빛을 받으면 살짝 드러나는 정도 */
+.notch__sensor {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #111115, #050506 65%);
+}
+/* 위치는 노치 중심 기준 실측값 (IR -68, 투광 -38, 카메라 +47, 도트 프로젝터 +75) */
+.notch__sensor--ir    { top: calc(4.5 * var(--pt)); left: calc(50% - 73 * var(--pt)); width: calc(10 * var(--pt)); height: calc(10 * var(--pt)); }
+.notch__sensor--flood { top: calc(6 * var(--pt));   left: calc(50% - 41.5 * var(--pt)); width: calc(7 * var(--pt)); height: calc(7 * var(--pt)); }
+.notch__sensor--dot   { top: calc(4 * var(--pt));   left: calc(50% + 69.5 * var(--pt)); width: calc(11 * var(--pt)); height: calc(11 * var(--pt)); }
+
+/* =========================================================================
+   5. 유리 반사광
+   ========================================================================= */
+.glass {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  border-radius: inherit;
+  pointer-events: none;
+  /* 대각선 하이라이트 한 줄. 배경 크기를 키워두고 위치만 움직이면
+     폰을 기울일 때 반사가 유리 위를 미끄러진다. */
+  background: linear-gradient(
+      118deg,
+      rgba(255, 255, 255, 0) 32%,
+      rgba(255, 255, 255, 0.09) 42%,
+      rgba(255, 255, 255, 0.03) 52%,
+      rgba(255, 255, 255, 0) 60%
+    )
+    calc(50% + var(--tx) * -45%) calc(50% + var(--ty) * -30%) / 260% 260% no-repeat;
+  /* 2.5D 곡면 유리 가장자리에 맺히는 빛 */
+  box-shadow:
+    inset 0 0 0 calc(1 * var(--pt)) rgba(255, 255, 255, 0.05),
+    inset 0 calc(1.2 * var(--pt)) calc(1.5 * var(--pt)) rgba(255, 255, 255, 0.1),
+    inset 0 calc(-1 * var(--pt)) calc(2 * var(--pt)) rgba(0, 0, 0, 0.6);
+  transition: background-position 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* =========================================================================
+   기타
+   ========================================================================= */
+/* 2018 버전으로 이동하는 링크 */
+.time-travel {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  z-index: 10;
+  padding: 10px 16px;
+  border-radius: 999px;
+  color: #fff;
+  font: 600 14px/1 var(--ui-font);
+  text-decoration: none;
+  background: rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: background 0.2s;
+}
+.time-travel:hover { background: rgba(0, 0, 0, 0.55); }
+.time-travel:focus-visible { outline: 2px solid #5ac8fa; outline-offset: 2px; }
+@media (max-width: 480px) {
+  .time-travel { top: 12px; left: 12px; padding: 8px 12px; font-size: 12px; }
+}
+
+/* 움직임을 줄이도록 설정한 사용자 존중 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

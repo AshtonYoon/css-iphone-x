@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CSS iPhone X</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="main.js" defer></script>
+</head>
+<body>
+  <main class="stage">
+    <figure class="iphone" aria-label="CSS로 만든 아이폰 X">
+      <!-- 하드웨어 버튼: 실제 아이폰 X 위치(mm)를 pt로 환산해서 배치 -->
+      <button class="hw hw--mute" type="button" aria-label="무음 스위치" aria-pressed="false"></button>
+      <button class="hw hw--vol-up" type="button" aria-label="볼륨 올리기"></button>
+      <button class="hw hw--vol-down" type="button" aria-label="볼륨 내리기"></button>
+      <button class="hw hw--side" type="button" aria-label="측면 버튼 (화면 켜기/끄기)"></button>
+
+      <!-- 스테인리스 프레임을 끊는 안테나 라인 -->
+      <span class="antenna antenna--left antenna--top"></span>
+      <span class="antenna antenna--left antenna--bottom"></span>
+      <span class="antenna antenna--right antenna--top"></span>
+      <span class="antenna antenna--right antenna--bottom"></span>
+
+      <div class="bezel">
+        <div class="screen" data-state="boot">
+
+          <div class="boot">
+            <img src="apple.svg" alt="">
+          </div>
+
+          <div class="lock">
+            <div class="wallpaper"></div>
+
+            <div class="status">
+              <span class="status__carrier">SKT</span>
+              <span class="status__right">
+                <span class="signal" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                <svg class="wifi" viewBox="2 3.2 12 8.6" aria-hidden="true">
+                  <path d="M8 11.5 5.6 9.1a3.4 3.4 0 0 1 4.8 0z"/>
+                  <path d="M3.9 7.4a5.8 5.8 0 0 1 8.2 0l-1.2 1.2a4.1 4.1 0 0 0-5.8 0z"/>
+                  <path d="M2.2 5.7a8.2 8.2 0 0 1 11.6 0l-1.2 1.2a6.5 6.5 0 0 0-9.2 0z"/>
+                </svg>
+                <span class="battery" aria-hidden="true"><span class="battery__level"></span></span>
+              </span>
+            </div>
+
+            <div class="lock__glyph" aria-hidden="true"></div>
+            <!-- JS가 돌기 전 기본값: 아이폰 X 발표일(2017-09-12) 9:41 -->
+            <time class="lock__time">9:41</time>
+            <div class="lock__date">9월 12일 화요일</div>
+
+            <button class="lock__action lock__action--torch" type="button" aria-label="손전등" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7.5 2.5h9v3l-2.2 3.6v12.4h-4.6V9.1L7.5 5.5z"/>
+                <path d="M7.5 5.5h9"/>
+                <circle cx="12" cy="13" r="1"/>
+              </svg>
+            </button>
+            <span class="lock__action lock__action--camera" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M3 8.5a2 2 0 0 1 2-2h2.6l1.6-2.2h5.6l1.6 2.2H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <circle cx="12" cy="13" r="3.6"/>
+              </svg>
+            </span>
+
+            <div class="home-indicator"></div>
+          </div>
+
+          <!-- 볼륨 / 무음 HUD (iOS 11 스타일) -->
+          <div class="hud" data-kind="volume" aria-live="polite">
+            <span class="hud__label">벨소리</span>
+            <span class="hud__icon" aria-hidden="true">
+              <svg class="i-speaker" viewBox="0 0 24 24">
+                <path class="fill" d="M3.5 9h4l5-4v14l-5-4h-4z"/>
+                <path d="M15.5 8.8a4.6 4.6 0 0 1 0 6.4M18 6.3a8.2 8.2 0 0 1 0 11.4"/>
+              </svg>
+              <svg class="i-bell" viewBox="0 0 24 24">
+                <path d="M12 3.2a5 5 0 0 0-5 5v4.4L5.2 16h13.6L17 12.6V8.2a5 5 0 0 0-5-5zM10 18.6a2 2 0 0 0 4 0"/>
+              </svg>
+              <svg class="i-bell-slash" viewBox="0 0 24 24">
+                <path d="M12 3.2a5 5 0 0 0-5 5v4.4L5.2 16h13.6L17 12.6V8.2a5 5 0 0 0-5-5zM10 18.6a2 2 0 0 0 4 0M4 3.5l16 16"/>
+              </svg>
+            </span>
+            <span class="hud__bar"></span>
+          </div>
+
+          <!-- 노치: 화면 위에 덮이는 검은 컷아웃 -->
+          <div class="notch" aria-hidden="true">
+            <span class="notch__sensor notch__sensor--ir"></span>
+            <span class="notch__sensor notch__sensor--flood"></span>
+            <span class="notch__speaker"></span>
+            <span class="notch__camera"></span>
+            <span class="notch__sensor notch__sensor--dot"></span>
+          </div>
+        </div>
+
+        <!-- 유리 반사광: 화면과 베젤 전체를 덮는 레이어 -->
+        <div class="glass" aria-hidden="true"></div>
+      </div>
+    </figure>
+
+    <a class="time-travel" href="../2018/">&larr; 8년 전 결과물 (2018, 고3)</a>
+  </main>
+</body>
+</html>
